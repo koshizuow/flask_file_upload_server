@@ -52,11 +52,10 @@ def index():
         files = request.files.getlist('file')
         for file in files:
             if file.filename:  # Ensure filename is not empty
-                filename = secure_filename(file.filename)
-                if filename:  # secure_filename may return empty string
-                    # Use unique filename to avoid overwriting existing files
-                    unique_name = get_unique_filename(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_name))
+                filename = file.filename
+                # Use unique filename to avoid overwriting existing files
+                unique_name = get_unique_filename(app.config['UPLOAD_FOLDER'], filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_name))
     # Build file list for display
     file_list_decoded = get_file_list(UPLOAD_FOLDER)
     file_list_decoded.sort(key=get_file_time, reverse=True)
