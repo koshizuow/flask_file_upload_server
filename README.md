@@ -79,17 +79,18 @@ This method is suitable for quick testing and development directly on your machi
 
 3.  **Changing the default port:**
 
-    The default port for the application is `8000`. To change this, modify the following line in `app.py`:
-    ```python
-    app.run(host='0.0.0.0', port=XXXX)
+    The default port for the application is `8000`. To change this, set the `PORT` environment variable when starting the app:
+    ```bash
+    PORT=XXXX python app.py
     ```
+    The upload directory can be changed the same way with `UPLOAD_FOLDER`.
 
 4.  **Run the application:**
     The application will create an `uploads` directory in your project folder.
     ```bash
     python app.py
     ```
-    The server will be available at `http://localhost:XXXX`.
+    The server will be available at `http://localhost:8000`, or on the port set with `PORT`.
 
 ### 2. Using `docker run`
 
