@@ -45,6 +45,25 @@ def get_unique_filename(folder, filename):
         i += 1
     return candidate
 
+def sanitize_filename(filename):
+    """
+    Reduce a client-supplied filename to a safe single path component.
+    Unlike werkzeug's secure_filename this keeps non-ASCII characters.
+    Returns None if nothing usable is left.
+    """
+    # Treat both separators alike so Windows-style paths are stripped too
+    name = filename.replace('\\', '/')
+    name = os.path.basename(name)
+    # Drop NUL and other control characters
+    name = ''.join(c for c in name if c.isprintable()).strip()
+    if name in ('', '.', '..'):
+        return None
+    return name
+
+def is_inside_upload_folder(path):
+    upload_folder_abs = os.path.abspath(app.config['UPLOAD_FOLDER'])
+    return os.path.commonpath([upload_folder_abs, os.path.abspath(path)]) == upload_folder_abs
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -52,10 +71,17 @@ def index():
         files = request.files.getlist('file')
         for file in files:
             if file.filename:  # Ensure filename is not empty
-                filename = file.filename
+                filename = sanitize_filename(file.filename)
+                if filename is None:
+                    flash('Invalid filename')
+                    continue
                 # Use unique filename to avoid overwriting existing files
                 unique_name = get_unique_filename(app.config['UPLOAD_FOLDER'], filename)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_name))
+                save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+                if not is_inside_upload_folder(save_path):
+                    flash('Invalid file path')
+                    continue
+                file.save(save_path)
     # Build file list for display
     file_list_decoded = get_file_list(UPLOAD_FOLDER)
     file_list_decoded.sort(key=get_file_time, reverse=True)
