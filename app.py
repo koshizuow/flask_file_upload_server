@@ -9,6 +9,11 @@ UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 
+# Optional upload size limit in bytes; requests above it get a 413. No limit when unset.
+max_content_length = os.environ.get('MAX_CONTENT_LENGTH')
+if max_content_length:
+    app.config['MAX_CONTENT_LENGTH'] = int(max_content_length)
+
 # Ensure upload folder exists on startup
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
