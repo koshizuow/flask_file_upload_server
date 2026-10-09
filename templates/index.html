@@ -293,14 +293,14 @@
                 <div class="file-card">
                     <div class="file-preview">
                         {% if file.type in ['jpg', 'jpeg', 'png', 'gif', 'webp'] %}
-                            <img src="{{ url_for('download_file', filename=file.name) }}" alt="{{ file.name }}">
+                            <img src="{{ url_for('download_file', filename=file.name) }}" alt="{{ file.name }}" loading="lazy" decoding="async">
                         {% elif file.type in ['mp4', 'webm', 'mov'] %}
                             <div class="video-container">
-                                <video src="{{ url_for('download_file', filename=file.name) }}" controls></video>
+                                <video src="{{ url_for('download_file', filename=file.name) }}" controls preload="none" data-lazy-media></video>
                             </div>
                         {% elif file.type in ['mp3', 'wav', 'm4a'] %}
                             <div class="audio-player-custom">
-                                <audio id="audio-{{ loop.index }}" src="{{ url_for('download_file', filename=file.name) }}"></audio>
+                                <audio id="audio-{{ loop.index }}" src="{{ url_for('download_file', filename=file.name) }}" preload="none" data-lazy-media></audio>
                                 
                                 <div class="controls-container">
                                     <button class="play-btn" data-audio-id="audio-{{ loop.index }}">
@@ -336,6 +336,35 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Video and audio start with preload="none". Fetch their metadata only
+            // when the card gets close to the viewport, so a long list does not
+            // hit the server for every file at once.
+            const loadMediaMetadata = (card) => {
+                card.querySelectorAll('[data-lazy-media]').forEach(media => {
+                    media.removeAttribute('data-lazy-media');
+                    media.preload = 'metadata';
+                    // Do not restart media the user has already started
+                    if (media.readyState === 0 && media.paused) {
+                        media.load();
+                    }
+                });
+            };
+            const lazyCards = Array.from(document.querySelectorAll('.file-card'))
+                .filter(card => card.querySelector('[data-lazy-media]'));
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            observer.unobserve(entry.target);
+                            loadMediaMetadata(entry.target);
+                        }
+                    });
+                }, { rootMargin: '300px 0px' });
+                lazyCards.forEach(card => observer.observe(card));
+            } else {
+                lazyCards.forEach(loadMediaMetadata);
+            }
+
             const playButtons = document.querySelectorAll('.play-btn');
 
             playButtons.forEach(button => {
